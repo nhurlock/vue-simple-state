@@ -2,8 +2,17 @@
   "name": "vue-simple-state",
   "version": "0.1.0",
   "description": "Simple Vue state management",
-  "author": "Nick Hurlock",
+  "author": "Nick Hurlock <nhurlock@gmail.com>",
   "license": "MIT",
+  "homepage": "https://github.com/NHurlock/vue-simple-state#readme",
+  "repository": "NHurlock/vue-simple-state",
+  "bugs": {
+    "url": "https://github.com/NHurlock/vue-simple-state/issues"
+  },
+  "keywords": [
+    "vue",
+    "state"
+  ],
   "source": "src/index.js",
   "main": "dist/vue-simple-state.js",
   "exports": "./dist/vue-simple-state.modern.js",
@@ -21,10 +30,6 @@
     "test:dev-cover": "npm run test:dev -- --coverage",
     "pre-commit": "lint-staged"
   },
-  "keywords": [
-    "vue",
-    "state"
-  ],
   "files": [
     "dist",
     "src"
