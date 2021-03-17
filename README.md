@@ -4,6 +4,10 @@ Quickly create shared complex reactive state structures
 
 <hr />
 
+[![Build Status](https://github.com/NHurlock/vue-simple-state/workflows/Node%20CI/badge.svg)](https://github.com/JS-DevTools/npm-publish/actions)
+[![npm](https://img.shields.io/npm/v/vue-simple-state.svg)](https://www.npmjs.com/package/vue-simple-state)
+[![License](https://img.shields.io/npm/l/vue-simple-state.svg)](LICENSE)
+
 ## Install
 
 ```shell
