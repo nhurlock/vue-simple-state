@@ -3,51 +3,27 @@ import { always } from '@/helpers'
 import State from '@/state'
 import useState from '@/useState'
 
-jest.mock('vue')
+jest.mock('vue', () => ({
+	...jest.requireActual('vue'),
+	onUnmounted: jest.fn()
+}))
 describe('src/useState.js', () => {
-	let unmounted
+	let testState
 
 	beforeEach(() => {
 		jest.clearAllMocks()
 		State.update(always({}))
-		Vue.readonly = (v) => ({
-			get value() {
-				return v.value
-			}
-		})
-		Vue.ref = (v) => ({
-			value: v
-		})
-		Vue.computed = (v) => {
-			if (typeof v === 'function') {
-				return {
-					get value() {
-						return v()
-					}
-				}
-			}
-			return {
-				get value() {
-					return v.get()
-				},
-				set value(val) {
-					v.set(val)
-				}
-			}
-		}
-		Vue.onUnmounted = (v) => {
-			unmounted = v
-		}
+		testState = useState({ manualUnsub: true })
 	})
 
 	afterEach(() => {
-		if (unmounted) {
-			unmounted()
+		if (testState.unsubscribe) {
+			testState.unsubscribe()
 		}
 	})
 
 	it('updates state ref when State is updated', () => {
-		const { state } = useState()
+		const { state } = testState
 
 		expect(state.value).toEqual({})
 
@@ -58,8 +34,23 @@ describe('src/useState.js', () => {
 		})
 	})
 
+	it('automatically unmounts onUnmounted', () => {
+		let manualUnsub
+		Vue.onUnmounted.mockImplementation((v) => {
+			manualUnsub = v
+		})
+
+		useState()
+
+		expect(State.observable.observers.length).toBe(2) // testState + useState
+
+		manualUnsub()
+
+		expect(State.observable.observers.length).toBe(1) // testState
+	})
+
 	it('creates computed state variable', () => {
-		const { computed } = useState()
+		const { computed } = testState
 
 		const test = computed((s) => s.name)
 
@@ -70,8 +61,20 @@ describe('src/useState.js', () => {
 		expect(test.value).toBe('test')
 	})
 
+	it('does not allow mutation within a computed state variable', () => {
+		const { state, computed } = testState
+
+		const test = computed((s) => {
+			s.name = 'test'
+			return s.name
+		})
+
+		expect(test.value).toBe(undefined)
+		expect(state.value).toEqual({})
+	})
+
 	it('throws TypeError when computed is not called with a function', () => {
-		const { computed } = useState()
+		const { computed } = testState
 
 		expect(() => computed('test')).toThrow(
 			new TypeError(
@@ -81,7 +84,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates reactive state variable by path', () => {
-		const { reactive } = useState()
+		const { reactive } = testState
 
 		const test = reactive(['name'])
 
@@ -93,7 +96,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates reactive state variable by path with default value', () => {
-		const { state, reactive } = useState()
+		const { state, reactive } = testState
 
 		const test = reactive(['name'], 'test')
 
@@ -102,7 +105,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('throws TypeError when reactive is not called with an array', () => {
-		const { reactive } = useState()
+		const { reactive } = testState
 
 		expect(() => reactive('test')).toThrow(
 			new TypeError('useState.reactive expected array: received string')
@@ -110,7 +113,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates writable state variable by path', () => {
-		const { state, writable } = useState()
+		const { state, writable } = testState
 
 		const test = writable(['name'])
 
@@ -126,7 +129,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates writable state variable by path with default value', () => {
-		const { state, writable } = useState()
+		const { state, writable } = testState
 
 		const test = writable(['name'], 'test')
 
@@ -135,7 +138,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('throws TypeError when writable is not called with an array', () => {
-		const { writable } = useState()
+		const { writable } = testState
 
 		expect(() => writable('test')).toThrow(
 			new TypeError('useState.writable expected array: received string')
@@ -143,7 +146,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates namespaced state scoped to path', () => {
-		const { state, useNamespace } = useState()
+		const { state, useNamespace } = testState
 		const { state: namespacedState } = useNamespace(['testing'])
 
 		expect(state.value).toEqual({})
@@ -175,7 +178,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('throws TypeError when useNamespace is not called with an array', () => {
-		const { useNamespace } = useState()
+		const { useNamespace } = testState
 
 		expect(() => useNamespace('test')).toThrow(
 			new TypeError(
@@ -185,7 +188,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates namespaced computed state variable', () => {
-		const { useNamespace } = useState()
+		const { useNamespace } = testState
 		const { computed } = useNamespace(['testing'])
 
 		const test = computed((s) => s.name)
@@ -203,8 +206,21 @@ describe('src/useState.js', () => {
 		expect(test.value).toBe('test')
 	})
 
+	it('does not allow mutation within a namespaced computed state variable', () => {
+		const { useNamespace } = testState
+		const { state, computed } = useNamespace(['testing'])
+
+		const test = computed((s) => {
+			s.name = 'test'
+			return s.name
+		})
+
+		expect(test.value).toBe(undefined)
+		expect(state.value).toEqual({})
+	})
+
 	it('creates namespaced reactive state variable by path', () => {
-		const { useNamespace } = useState()
+		const { useNamespace } = testState
 		const { reactive } = useNamespace(['testing'])
 
 		const test = reactive(['name'])
@@ -223,7 +239,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates namespaced reactive state variable by path with default value', () => {
-		const { useNamespace } = useState()
+		const { useNamespace } = testState
 		const { state, reactive } = useNamespace(['testing'])
 
 		const test = reactive(['name'], 'test')
@@ -233,7 +249,7 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates namespaced writable state variable by path', () => {
-		const { state, useNamespace } = useState()
+		const { state, useNamespace } = testState
 		const { state: namespacedState, writable } = useNamespace(['testing'])
 
 		const test = writable(['name'])
@@ -254,12 +270,36 @@ describe('src/useState.js', () => {
 	})
 
 	it('creates namespaced writable state variable by path with default value', () => {
-		const { useNamespace } = useState()
+		const { useNamespace } = testState
 		const { state, writable } = useNamespace(['testing'])
 
 		const test = writable(['name'], 'test')
 
 		expect(test.value).toBe('test')
 		expect(state.value).toEqual({})
+	})
+
+	it('allows creation of nested namespaces', () => {
+		const { state: rootState, useNamespace } = testState
+		const { useNamespace: useNestedNs } = useNamespace(['testing'])
+		const { state, writable } = useNestedNs(['nested'])
+
+		const test = writable(['prop'])
+
+		expect(test.value).toBe(undefined)
+		expect(state.value).toEqual({})
+
+		test.value = 'test'
+
+		expect(state.value).toEqual({
+			prop: 'test'
+		})
+		expect(rootState.value).toEqual({
+			testing: {
+				nested: {
+					prop: 'test'
+				}
+			}
+		})
 	})
 })

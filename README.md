@@ -17,10 +17,14 @@ npm install --save vue-simple-state
 
 ## Usage - `useState`
 
-`useState` is meant to be used directly inside a `setup` function in `Vue` 3+. Read more about `setup` [in Vue's docs](https://v3.vuejs.org/guide/composition-api-setup.html).
+`useState` is meant to be used directly inside of a `setup` function in a `Vue` 3+ component. Read more about `setup` [in Vue's docs](https://v3.vuejs.org/guide/composition-api-setup.html). For use outside of a component, use the `manualUnsub` option below, or manually interact with `State` ([see Advanced Usage](#advanced-usage---state))
+
+### `useState(config)` - Options
+* `config {}` - (Optional) Configuration
+  * `manualUnsub <bool = false>` - Choose to manually unsubscribe from state updates. Defaults to `false`.  When set to `true`, `useState` will return an `unsubscribe` method to call in order to unsubscribe manually. By default, `useState` will unsubscribe using the `onUnmounted` component lifecycle hook
 
 ### `state` - Direct read-only access to state
-The `state` property is read-only direct access to the current state. `state` is used as a readonly ref using `Vue`'s built-in methods
+The `state` property is read-only direct access to the current state. `state` is used as a [computed](https://v3.vuejs.org/guide/reactivity-computed-watchers.html#computed-values) variable, its value will be accessed using the `value` property.
 ```javascript
 import { useState } from 'vue-simple-state'
 
@@ -35,11 +39,9 @@ export default {
     }
 }
 ```
-Read more about `readonly` [in Vue's docs](https://v3.vuejs.org/api/basic-reactivity.html#readonly).
-Read more about `ref` [in Vue's docs](https://v3.vuejs.org/api/refs-api.html#ref).
 
 ### `computed(fn)` - Create a read-only computed state variable using a function
-Variables created using the `computed` method take a function to pull out a value from state. `computed` returns a read-only computed variable using `Vue`'s built-in method
+Variables created using the `computed` method take a function to pull out a value from state. `computed` is used as a [computed](https://v3.vuejs.org/guide/reactivity-computed-watchers.html#computed-values) variable, its value will be accessed using the `value` property.
 * `fn <(state) => any>` - Function used to extract value from state
 ```javascript
 import { useState } from 'vue-simple-state'
@@ -59,10 +61,9 @@ export default {
     }
 }
 ```
-Read more about `computed` [in Vue's docs](https://v3.vuejs.org/guide/reactivity-computed-watchers.html#computed-values).
 
 ### `reactive(path, default?)` - Create a read-only state variable by path
-Variables created using the `reactive` method take a path to pull out a value from state and an optional default value if none is found. `reactive` returns a read-only computed variable using `Vue`'s built-in method
+Variables created using the `reactive` method take a path to pull out a value from state and an optional default value if none is found. `reactive` is used as a [computed](https://v3.vuejs.org/guide/reactivity-computed-watchers.html#computed-values) variable, its value will be accessed using the `value` property.
 * `path <string[]>` - Path by property name to access state value
 * `default <any?>` - (Optional) Default value to return when state value is not set
 ```javascript
@@ -81,10 +82,9 @@ export default {
     }
 }
 ```
-Read more about `computed` [in Vue's docs](https://v3.vuejs.org/guide/reactivity-computed-watchers.html#computed-values).
 
 ### `writable(path, default?)` - Create a read-write computed state variable by path
-Variables created using the `writable` method take a path to pull out a value from state and an optional default value if none is found. `writable` returns a writable computed variable using `Vue`'s built-in method
+Variables created using the `writable` method take a path to pull out a value from state and an optional default value if none is found. `writable` is used as a read-write [computed](https://v3.vuejs.org/guide/reactivity-computed-watchers.html#computed-values) variable, its value will be accessed and set using the `value` property.
 * `path <string[]>` - Path by property name to access state value
 * `default <any?>` - (Optional) Default value to return when state value is not set
 ```vue
@@ -109,7 +109,6 @@ export default {
 }
 </script>
 ```
-Read more about `computed` [in Vue's docs](https://v3.vuejs.org/guide/reactivity-computed-watchers.html#computed-values).
 
 ### `useNamespace(path)` - Create a namespace for state
 When using state in components, splitting out state to group related information is essential. Namespaces share all of the same properties/methods as described above but they are scoped to the defined namespace. Namespaces return their own `useNamespace` method, allowing creation of a namespace off of another namespace
@@ -130,6 +129,21 @@ export default {
         }
     }
 }
+```
+
+### `unsubscribe()` - Manually unsubscribe
+This method only exists when configured with the `manualUnsub` option set to `true`. When called it will unsubscribe `useState` from any future state updates
+```javascript
+import { useState } from 'vue-simple-state'
+
+const { state, unsubscribe } = useState({
+    manualUnsub: true
+})
+
+// ...use state
+
+// cleanup subscription
+unsubscribe()
 ```
 
 ## Advanced usage - `State`
@@ -201,20 +215,16 @@ import { State, useState } from 'vue-simple-state'
 export default {
     // ...
     setup() {
-        const { state } = useState()
+        const { writable } = useState()
 
         // Given: state.tags === 'one,two'
         // Read tags as an Array: ['one', 'two']
         // Update tags in state as a String: 'one,two,X'
+        const stateTags = writable(['tags'])
         const tags = computed({
-            get: () => state.value.tags.split(','),
-            set: (val) => {
-                State.update((s) => {
-                    s.tags = val.join(',')
-                    return s
-                })
-            }
-        })
+			get: () => stateTags.value.split(','),
+			set: (val) => (stateTags.value = val.join(','))
+		})
 
         return {
             tags

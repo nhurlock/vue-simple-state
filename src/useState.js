@@ -1,64 +1,71 @@
-import { computed as vcomputed, onUnmounted, ref, readonly } from 'vue'
+import { computed as vcomputed, onUnmounted, readonly, ref } from 'vue'
 import {
-	setPath,
 	compose,
-	defaultTo,
-	path,
+	defaultPath,
 	expectArray,
-	expectFunction
+	expectFunction,
+	identity,
+	setPath
 } from './helpers'
 import State from './state'
 
 const computed = (state) => (f) => {
 	expectFunction('useState.computed', f)
-	return vcomputed(() => f(state.value))
+	return vcomputed(() => f(readonly(state.value)))
 }
 
 const reactive = (state) => (p, defaultValue) => {
 	expectArray('useState.reactive', p)
-	return computed(state)(compose(defaultTo(defaultValue))(path(p)))
+	return computed(state)(defaultPath(defaultValue)(p))
 }
 
-const writable = (state, setState) => (p, defaultValue) => {
+const writable = (state) => (p, defaultValue) => {
 	expectArray('useState.writable', p)
 	return vcomputed({
-		get: () => defaultTo(defaultValue)(path(p)(state.value)),
-		set: compose(setState)(setPath(p))
+		get: () => defaultPath(defaultValue)(p)(state.value),
+		set: (val) => (state.value = setPath(p)(val)(state.value))
 	})
 }
 
-const stateProps = (state, setState) => ({
-	state: readonly(state),
-	reactive: reactive(state),
-	computed: computed(state),
-	writable: writable(state, setState),
-	useNamespace: createNamespace(state, setState)
-})
-
-const createNamespace = (state, setState) => (p) => {
+const stateProps = (rootSetState, pState, pPath = []) => (p) => {
 	expectArray('useState.useNamespace', p)
 
-	const namespacedState = writable(state, setState)(p, {})
-	const setNamespacedState = (f) => {
-		namespacedState.value = f(namespacedState.value)
-	}
+	const statePath = pPath.concat(p)
 
-	return stateProps(namespacedState, setNamespacedState)
+	const setState = compose(rootSetState)(setPath(statePath))
+	const state = vcomputed({
+		get: () => defaultPath({})(p)(pState.value),
+		set: setState
+	})
+
+	return {
+		state: computed(state)(identity),
+		computed: computed(state),
+		reactive: reactive(state),
+		writable: writable(state),
+		useNamespace: stateProps(rootSetState, state, statePath)
+	}
 }
 
-const useState = () => {
-	let state = ref({})
+const useState = (config = {}) => {
+	const { manualUnsub = false } = config
+
+	const state = ref({})
 	const setState = (f) => {
 		State.update(f)
 	}
+	const unsubscribe = State.subscribe((s) => {
+		state.value = s
+	})
+	const props = stateProps(setState, state)([])
 
-	onUnmounted(
-		State.subscribe((s) => {
-			state.value = s
-		})
-	)
+	if (manualUnsub === false) {
+		onUnmounted(unsubscribe)
+	} else {
+		props.unsubscribe = unsubscribe
+	}
 
-	return stateProps(state, setState)
+	return props
 }
 
 export default useState
