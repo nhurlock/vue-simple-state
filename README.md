@@ -148,7 +148,7 @@ unsubscribe()
 
 ## Advanced usage - `State`
 
-`State` is the service maintaining the `BehaviorSubject` that is being used to handle the application state
+`State` is the service maintaining the [BehaviorSubject](https://rxjs-dev.firebaseapp.com/api/index/class/BehaviorSubject) that is being used to handle the application state
 
 ### `State.observable` - Direct read-only access to the observable
 ```javascript
@@ -160,7 +160,6 @@ behaviorSubject
     .pipe(...)
     .subscribe(fn)
 ```
-Read more about `BehaviorSubject` [in rxjs's docs](https://rxjs-dev.firebaseapp.com/api/index/class/BehaviorSubject)
 
 ### `State.update(fn)` - Update state using a function
 * `fn <(state) => state>` - Function used to manipulate state and return an updated state
@@ -222,9 +221,9 @@ export default {
         // Update tags in state as a String: 'one,two,X'
         const stateTags = writable(['tags'])
         const tags = computed({
-			get: () => stateTags.value.split(','),
-			set: (val) => (stateTags.value = val.join(','))
-		})
+            get: () => stateTags.value.split(','),
+            set: (val) => (stateTags.value = val.join(','))
+        })
 
         return {
             tags
