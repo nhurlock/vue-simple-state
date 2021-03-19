@@ -4,7 +4,9 @@ module.exports = {
 		node: true,
 		es2021: true
 	},
-	parser: '@babel/eslint-parser',
+	parserOptions: {
+		sourceType: 'module'
+	},
 	extends: ['eslint:recommended', 'plugin:prettier/recommended'],
 	rules: {
 		'prettier/prettier': [

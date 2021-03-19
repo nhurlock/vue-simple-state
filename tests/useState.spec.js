@@ -302,4 +302,42 @@ describe('src/useState.js', () => {
 			}
 		})
 	})
+
+	it('shares state between multiple observers', () => {
+		const {
+			state: state1,
+			writable: writable1,
+			unsubscribe: unsub1
+		} = useState({
+			manualUnsub: true
+		})
+		const {
+			state: state2,
+			writable: writable2,
+			unsubscribe: unsub2
+		} = useState({
+			manualUnsub: true
+		})
+
+		expect(state1.value).toEqual({})
+		expect(state2.value).toEqual({})
+
+		const test1 = writable1(['test'])
+		const test2 = writable2(['test'])
+
+		expect(test1.value).toBe(undefined)
+
+		test1.value = 'value'
+
+		expect(state1.value).toEqual({
+			test: 'value'
+		})
+		expect(test2.value).toBe('value')
+		expect(state2.value).toEqual({
+			test: 'value'
+		})
+
+		unsub1()
+		unsub2()
+	})
 })

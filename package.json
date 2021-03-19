@@ -23,7 +23,7 @@
     "husky": "husky",
     "build": "rimraf dist && microbundle",
     "lint": "eslint",
-    "lint:fix": "eslint --fix",
+    "lint:fix": "npm run lint -- --fix",
     "test": "jest",
     "test:cover": "npm run test -- --coverage",
     "test:dev": "npm run test -- --watch",
@@ -41,9 +41,6 @@
     ]
   },
   "devDependencies": {
-    "@babel/core": "^7.13.10",
-    "@babel/eslint-parser": "^7.13.10",
-    "@babel/preset-env": "^7.13.10",
     "eslint": "^7.22.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-prettier": "^3.3.1",

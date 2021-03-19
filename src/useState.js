@@ -29,15 +29,12 @@ const writable = (state) => (p, defaultValue) => {
 
 const stateProps = (rootSetState, pState, pPath = []) => (p) => {
 	expectArray('useState.useNamespace', p)
-
 	const statePath = pPath.concat(p)
-
 	const setState = compose(rootSetState)(setPath(statePath))
 	const state = vcomputed({
 		get: () => defaultPath({})(p)(pState.value),
 		set: setState
 	})
-
 	return {
 		state: computed(state)(identity),
 		computed: computed(state),

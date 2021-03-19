@@ -1,4 +1,4 @@
-import { path, over, lensPath } from 'ramda'
+import { path, set, lensPath } from 'ramda'
 
 const always = (v) => () => v
 
@@ -22,7 +22,7 @@ const expectFunction = expectTypeError('function')
 
 const identity = (v) => v
 
-const setPath = (p) => (v) => over(lensPath(p), always(v))
+const setPath = (p) => (v) => set(lensPath(p), v)
 
 export {
 	always,
