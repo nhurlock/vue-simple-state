@@ -37,5 +37,5 @@ jobs:
         run: npm run test:cover
 
       - name: Report Coverage to Codecov
-        if: ${{ env.REPORT_COVERAGE }}
+        if: ${{ env.REPORT_COVERAGE == true }}
         uses: codecov/codecov-action@v1
