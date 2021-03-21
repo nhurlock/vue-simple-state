@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs'
 import { takeUntil } from 'rxjs/operators'
-import { expectFunction } from './helpers'
+import { expectFunction } from './lib/errors'
 
 export default (function State() {
 	let state = {}

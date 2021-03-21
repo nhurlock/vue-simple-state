@@ -1,7 +1,7 @@
 import Vue from 'vue'
-import { always } from '@/helpers'
-import State from '@/state'
-import useState from '@/useState'
+import { always } from 'ramda'
+import { State, config, useState } from '@/index'
+import { checkForHook } from '@/lib/onUnmounted'
 
 jest.mock('vue', () => ({
 	...jest.requireActual('vue'),
@@ -9,17 +9,21 @@ jest.mock('vue', () => ({
 }))
 describe('src/useState.js', () => {
 	let testState
+	let consoleWarn
 
 	beforeEach(() => {
 		jest.clearAllMocks()
+		consoleWarn = console.warn
+		config.set({ manualUnsub: true })
 		State.update(always({}))
-		testState = useState({ manualUnsub: true })
+		testState = useState()
 	})
 
 	afterEach(() => {
 		if (testState.unsubscribe) {
 			testState.unsubscribe()
 		}
+		console.warn = consoleWarn
 	})
 
 	it('updates state ref when State is updated', () => {
@@ -34,11 +38,14 @@ describe('src/useState.js', () => {
 		})
 	})
 
-	it('automatically unmounts onUnmounted', () => {
+	it('automatically unsubscribes onUnmounted', () => {
+		config.set({ manualUnsub: false })
+
 		let manualUnsub
 		Vue.onUnmounted.mockImplementation((v) => {
 			manualUnsub = v
 		})
+		checkForHook()
 
 		useState()
 
@@ -47,6 +54,27 @@ describe('src/useState.js', () => {
 		manualUnsub()
 
 		expect(State.observable.observers.length).toBe(1) // testState
+	})
+
+	it('switches to manually unsubscribe if onUnmounted hook is not found (no vue 3 installed)', () => {
+		config.set({ manualUnsub: false })
+
+		Vue.onUnmounted = undefined
+		checkForHook()
+
+		const { unsubscribe } = useState()
+
+		expect(State.observable.observers.length).toBe(2) // testState + useState
+
+		unsubscribe()
+
+		expect(State.observable.observers.length).toBe(1) // testState
+	})
+
+	it('throws error when passed an invalid config', () => {
+		expect(() => useState('test')).toThrow(
+			`${global.packageName}: config - must be of type "Object", received "String"`
+		)
 	})
 
 	it('creates computed state variable', () => {
@@ -62,6 +90,8 @@ describe('src/useState.js', () => {
 	})
 
 	it('does not allow mutation within a computed state variable', () => {
+		console.warn = jest.fn() // Vue's readonly warning is expected
+
 		const { state, computed } = testState
 
 		const test = computed((s) => {
@@ -78,7 +108,7 @@ describe('src/useState.js', () => {
 
 		expect(() => computed('test')).toThrow(
 			new TypeError(
-				'useState.computed expected function: received string'
+				`${global.packageName}: "useState.computed" expected "Function", received "String"`
 			)
 		)
 	})
@@ -108,7 +138,9 @@ describe('src/useState.js', () => {
 		const { reactive } = testState
 
 		expect(() => reactive('test')).toThrow(
-			new TypeError('useState.reactive expected array: received string')
+			new TypeError(
+				`${global.packageName}: "useState.reactive" expected "Array", received "String"`
+			)
 		)
 	})
 
@@ -141,7 +173,9 @@ describe('src/useState.js', () => {
 		const { writable } = testState
 
 		expect(() => writable('test')).toThrow(
-			new TypeError('useState.writable expected array: received string')
+			new TypeError(
+				`${global.packageName}: "useState.writable" expected "Array", received "String"`
+			)
 		)
 	})
 
@@ -182,7 +216,7 @@ describe('src/useState.js', () => {
 
 		expect(() => useNamespace('test')).toThrow(
 			new TypeError(
-				'useState.useNamespace expected array: received string'
+				`${global.packageName}: "useState.useNamespace" expected "Array", received "String"`
 			)
 		)
 	})
@@ -207,6 +241,8 @@ describe('src/useState.js', () => {
 	})
 
 	it('does not allow mutation within a namespaced computed state variable', () => {
+		console.warn = jest.fn() // Vue's readonly warning is expected
+
 		const { useNamespace } = testState
 		const { state, computed } = useNamespace(['testing'])
 

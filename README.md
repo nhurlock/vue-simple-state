@@ -1,6 +1,6 @@
 # vue-simple-state
 
-Quickly create shared complex reactive state structures
+Quickly create shared complex reactive state structures. Built using [@vue/reactivity](https://github.com/vuejs/vue-next/tree/master/packages/reactivity) and [rxjs](https://github.com/ReactiveX/rxjs)
 
 <hr />
 
@@ -15,14 +15,15 @@ Quickly create shared complex reactive state structures
 ```shell
 npm install --save vue-simple-state
 ```
+<br>
 
 ## Usage - `useState`
 
-`useState` is meant to be used directly inside of a `setup` function in a `Vue` 3+ component. Read more about `setup` [in Vue's docs](https://v3.vuejs.org/guide/composition-api-setup.html). For use outside of a component, use the `manualUnsub` option below, or manually interact with `State` ([see Advanced Usage](#advanced-usage---state))
+`useState` is meant to be used directly inside of a `setup` function in a `Vue` 3+ component, however, it can be used without. Read more about `setup` [in Vue's docs](https://v3.vuejs.org/guide/composition-api-setup.html). For use outside of a `Vue` 3+ component, use the `manualUnsub` option below (if `Vue` is installed, otherwise this is the default), or manually interact with `State` ([see Advanced Usage](#advanced-usage---state))
 
 ### `useState(config)` - Options
-* `config {}` - (Optional) Configuration
-  * `manualUnsub <bool = false>` - Choose to manually unsubscribe from state updates. Defaults to `false`.  When set to `true`, `useState` will return an `unsubscribe` method to call in order to unsubscribe manually. By default, `useState` will unsubscribe using the `onUnmounted` component lifecycle hook
+* `config {}` - (Optional) Configuration to override base configuration per-use
+  * [see available config options and defaults in `config`](#usage---config)
 
 ### `state` - Direct read-only access to state
 The `state` property is read-only direct access to the current state. `state` is used as a [computed](https://v3.vuejs.org/guide/reactivity-computed-watchers.html#computed-values) variable, its value will be accessed using the `value` property.
@@ -133,7 +134,7 @@ export default {
 ```
 
 ### `unsubscribe()` - Manually unsubscribe
-This method only exists when configured with the `manualUnsub` option set to `true`. When called it will unsubscribe `useState` from any future state updates
+This method only exists when configured with the `manualUnsub` option set to `true` (or when `Vue` 3+ is not installed). When called it will unsubscribe `useState` from any future state updates
 ```javascript
 import { useState } from 'vue-simple-state'
 
@@ -146,6 +147,41 @@ const { state, unsubscribe } = useState({
 // cleanup subscription
 unsubscribe()
 ```
+<br>
+
+## Usage - `config`
+
+### `config.set(config)` - Set application-level configuration
+Any config set using this method will be used as the default config for the application. These settings can be overwritten per-use of `useState(config)`
+* `config {}` - Application-level configuration
+  * `manualUnsub <bool = false*>` - Choose to manually unsubscribe from state updates. Defaults to `false`.  When set to `true`, `useState` will return an `unsubscribe` method to call in order to unsubscribe manually. By default, `useState` will unsubscribe using the `onUnmounted` component lifecycle hook. 
+    * *When `Vue` 3+ is not installed, this option defaults to `true` and will require `unsubscribe` to be called manually for cleanup
+```js
+import { config } from 'vue-simple-state'
+
+config.set({
+    // ...options
+})
+```
+
+### `config.get()` - Get the current configuration being used
+```js
+import { config } from 'vue-simple-state'
+
+const currentConfig = config.get()
+```
+
+### `config.reset()` - Reset configuration to default
+```js
+import { config } from 'vue-simple-state'
+
+// manualUnsub === true
+
+config.reset()
+
+// manualUnsub === false
+```
+<br>
 
 ## Advanced usage - `State`
 
@@ -188,6 +224,7 @@ const unsubscribe = State.subscribe(onStateChange)
 // cleanup subscription
 unsubscribe()
 ```
+<br>
 
 ## Advanced Examples
 

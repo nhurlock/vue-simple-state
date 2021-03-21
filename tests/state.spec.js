@@ -1,4 +1,4 @@
-import { always } from '@/helpers'
+import { always } from 'ramda'
 import State from '@/state'
 
 describe('src/state.js', () => {
@@ -22,7 +22,7 @@ describe('src/state.js', () => {
 		expect(updateFn).toHaveBeenCalledWith({})
 	})
 
-	it('notifies subscribers when updates are made', () => {
+	it('notifies observers when updates are made', () => {
 		State.update(always({ name: 'test' }))
 		State.update(always({ name: 'test2' }))
 		State.update(always({ name: 'test3' }))
@@ -38,7 +38,9 @@ describe('src/state.js', () => {
 
 	it('throws TypeError when update is not called with a function', () => {
 		expect(() => State.update('test')).toThrow(
-			new TypeError('State.update expected function: received string')
+			new TypeError(
+				`${global.packageName}: "State.update" expected "Function", received "String"`
+			)
 		)
 	})
 
@@ -63,7 +65,9 @@ describe('src/state.js', () => {
 
 	it('throws TypeError when subscribe is not called with a function', () => {
 		expect(() => State.subscribe('test')).toThrow(
-			new TypeError('State.subscribe expected function: received string')
+			new TypeError(
+				`${global.packageName}: "State.subscribe" expected "Function", received "String"`
+			)
 		)
 	})
 })

@@ -19,7 +19,8 @@ module.exports = {
 				tabWidth: 4,
 				endOfLine: 'auto'
 			}
-		]
+		],
+		'sort-imports': ['error', { ignoreDeclarationSort: true }]
 	},
 	overrides: [
 		{
