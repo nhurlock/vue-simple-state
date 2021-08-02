@@ -55,6 +55,6 @@
   "dependencies": {
     "@vue/reactivity": "^3.0.0",
     "ramda": "^0.27.1",
-    "rxjs": "^6.6.6"
+    "rxjs": "^7.3.0"
   }
 }
